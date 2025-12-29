@@ -1,0 +1,37 @@
+
+{
+  "hi|hello|hey|start": [
+    "Hello! 👋 Welcome! Paano kita matutulungan?\n\n📌 Pwede mong itanong:\n- Services\n- Price\n- Schedule\n- Contact"
+  ],
+
+  "services|serbisyo|offer": [
+    "📋 **Our Services:**\n✅ Telegram Bot Automation\n✅ Auto-reply system\n✅ Auto-forward files\n✅ Custom bot for business"
+  ],
+
+  "price|presyo|magkano": [
+    "💰 **Pricing:**\nBasic Bot – ₱___\nAdvanced Bot – ₱___\nCustom Bot – depende sa request\n\n📩 Message us to get a quote."
+  ],
+
+  "schedule|oras|available": [
+    "🕒 **Office Hours:**\nMonday – Saturday\n9:00 AM – 6:00 PM"
+  ],
+
+  "contact|kontak|message": [
+    "📞 **Contact Us:**\nTelegram: @YourUsername\nEmail: your@email.com"
+  ],
+
+  "help|tulong": [
+    "🤖 I can help you with:\n✅ Service info\n✅ Pricing\n✅ Contact details\n\nType a keyword to continue."
+  ]
+}
+
+
+
+
+
+
+
+
+
+
+
