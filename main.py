@@ -1,3 +1,4 @@
+print("🚀 Bot starting...")
 
 # ==============================
 # IMPORTS
@@ -239,6 +240,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
