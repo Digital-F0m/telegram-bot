@@ -1,5 +1,3 @@
-print("🚀 Bot starting...")
-
 # ==============================
 # IMPORTS
 # ==============================
@@ -28,14 +26,12 @@ load_dotenv()
 
 TOKEN = os.getenv("BOT_TOKEN")
 OWNER_ID = os.getenv("OWNER_ID")
+OWNER_ID = int(OWNER_ID) if OWNER_ID and OWNER_ID.isdigit() else None
+MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB
+AUTO_FORWARD = os.getenv("AUTO_FORWARD", "1").lower() in ("1", "true", "yes")
 
 if not TOKEN:
     raise RuntimeError("❌ BOT_TOKEN missing in .env")
-
-OWNER_ID = int(OWNER_ID) if OWNER_ID and OWNER_ID.isdigit() else None
-
-MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB
-AUTO_FORWARD = os.getenv("AUTO_FORWARD", "1") in ("1", "true", "True")
 
 BOT_STATS = {"photos": 0, "documents": 0}
 
@@ -53,8 +49,8 @@ FILES_DIR.mkdir(parents=True, exist_ok=True)
 # LOGGING
 # ==============================
 logging.basicConfig(
-    level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s",
+    level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
@@ -75,6 +71,7 @@ if KEYWORDS_PATH.exists():
 # UTILITIES
 # ==============================
 def sanitize_filename(name: str) -> str:
+    """Sanitize filename to remove illegal characters and limit length."""
     name = re.sub(r"[\\/]", "_", name)
     name = re.sub(r"[^A-Za-z0-9_.\-() ]+", "", name)
     return name[:200]
@@ -83,6 +80,7 @@ def is_admin(user_id: int) -> bool:
     return OWNER_ID is not None and user_id == OWNER_ID
 
 def admin_only(func):
+    """Decorator to restrict commands to admin only."""
     async def wrapper(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not is_admin(update.effective_user.id):
             await update.message.reply_text("❌ Admin only command.")
@@ -103,14 +101,16 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/start - Start bot\n"
         "/help - Show help\n"
         "/menu - Open menu\n"
-        "/getmyid - Show your user ID\n"
-        "\nAdmin only:\n"
-        "/toggleforward\n"
-        "/getstats"
+        "/getmyid - Show your user ID\n\n"
+        "Admin only:\n"
+        "/toggleforward - Toggle auto-forward\n"
+        "/getstats - Show bot stats"
     )
 
 async def getmyid(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(f"🆔 Your ID: `{update.effective_user.id}`", parse_mode="Markdown")
+    await update.message.reply_text(
+        f"🆔 Your ID: `{update.effective_user.id}`", parse_mode="Markdown"
+    )
 
 # ==============================
 # ADMIN COMMANDS
@@ -119,7 +119,9 @@ async def getmyid(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def toggleforward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global AUTO_FORWARD
     AUTO_FORWARD = not AUTO_FORWARD
-    await update.message.reply_text(f"Auto-forward {'✅ ON' if AUTO_FORWARD else '❌ OFF'}")
+    await update.message.reply_text(
+        f"Auto-forward {'✅ ON' if AUTO_FORWARD else '❌ OFF'}"
+    )
 
 @admin_only
 async def getstats(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -143,7 +145,6 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-
     if query.data == "about":
         await query.edit_message_text("🤖 Telegram Automation Bot\nDeveloped by Efren")
     elif query.data == "contact":
@@ -161,6 +162,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await file.download_to_drive(PHOTOS_DIR / filename)
 
     BOT_STATS["photos"] += 1
+    logger.info(f"Photo received from {user.username} ({user.id}): {filename}")
 
     if OWNER_ID and AUTO_FORWARD:
         await context.bot.send_photo(
@@ -184,6 +186,7 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await file.download_to_drive(FILES_DIR / filename)
 
     BOT_STATS["documents"] += 1
+    logger.info(f"Document received from {user.username} ({user.id}): {filename}")
 
     if OWNER_ID and AUTO_FORWARD:
         await context.bot.send_document(
@@ -199,10 +202,10 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ==============================
 async def keyword_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (update.message.text or "").lower()
-
     for pattern, replies in KEYWORDS.items():
         if re.search(pattern, text):
             await update.message.reply_text(random.choice(replies))
+            logger.info(f"Keyword matched from {update.effective_user.username}: {text}")
             return
 
 # ==============================
@@ -210,6 +213,13 @@ async def keyword_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ==============================
 async def error_handler(update, context):
     logger.exception("Bot error:", exc_info=context.error)
+
+# ==============================
+# MAIN MESSAGE HANDLER (LOGGING EXAMPLE)
+# ==============================
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logging.info(f"Message from {update.effective_user.username}: {update.message.text}")
+    await update.message.reply_text("Got your message!")
 
 # ==============================
 # MAIN
@@ -233,14 +243,11 @@ def main():
     app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, keyword_reply))
 
+    # Error handler
     app.add_error_handler(error_handler)
 
-    logger.info("✅ Bot running...")
+    logger.info("✅ Bot running and ready to receive messages!")
     app.run_polling()
 
 if __name__ == "__main__":
     main()
-
-
-
-
